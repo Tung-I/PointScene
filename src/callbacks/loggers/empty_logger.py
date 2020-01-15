@@ -22,9 +22,9 @@ class EmptyLogger(BaseLogger):
             valid_output (torch.Tensor): The validation output.
         """
 
-        train_slice_id = random.randint(0, train_output.size(2)-1)
+        # train_slice_id = random.randint(0, train_output.size(2)-1)
 
-        valid_slice_id = random.randint(0, valid_output.size(2)-1)
+        # valid_slice_id = random.randint(0, valid_output.size(2)-1)
 
         # num_classes = train_output.size(1)
         # train_img = make_grid(train_batch['image'][:, :, train_slice_id], nrow=1, normalize=True, scale_each=True, pad_value=1)

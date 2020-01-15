@@ -37,7 +37,7 @@ class FT3DTrainer(BaseTrainer):
             batch = self._allocate_data(batch)
             pc1, pc2, rgb1, rgb2, flow, mask = self._get_inputs_targets(batch)
             target = {'flow': flow}
-            
+
             if mode == 'training':
                 outputs = self.net(pc1, pc2, rgb1, rgb2)
 

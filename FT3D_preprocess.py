@@ -157,7 +157,15 @@ def gen_datapoint(fname_disparity, fname_disparity_next_frame, fname_disparity_c
 
     mask1 = valid_mask_occ1 & valid_mask_fov1
 
-    return current_pos1, current_pos2, current_rgb1, current_rgb2, flow, mask1, sampled_pix1_yx
+    current_pos1[np.where(np.isnan(current_pos1)!=0)] = 0
+    current_pos2[np.where(np.isnan(current_pos2)!=0)] = 0
+    current_rgb1[np.where(np.isnan(current_rgb1)!=0)] = 0
+    current_rgb2[np.where(np.isnan(current_rgb2)!=0)] = 0
+    flow[np.where(np.isnan(flow)!=0)] = 0
+    mask1[np.where(np.isnan(mask1)!=0)] = 0
+
+
+    return current_pos1, current_pos2, current_rgb1, current_rgb2, flow, mask1
 
 
 def proc_one_scene(s, input_dir_1, input_dir_2, output_dir):
@@ -187,8 +195,7 @@ def proc_one_scene(s, input_dir_1, input_dir_2, output_dir):
                                        color1=d[2], \
                                        color2=d[3], \
                                        flow=d[4], \
-                                       valid_mask1=d[5], \
-                                       point_yx = d[6])
+                                       mask=d[5])
         else:
             print('N')
 

@@ -18,7 +18,7 @@ class MyL2Loss(nn.Module):
         if mask is not None:
             err = torch.norm(flow - flow_pred, p=2, dim=1)
             err = err * mask
-            loss = torch.sum(err) / torch.sum(mask)
+            loss = torch.sum(err) / (torch.sum(mask) + 1e-20)
         else:
             loss = torch.norm(flow - flow_pred, p=2, dim=1).mean()
 

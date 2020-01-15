@@ -1,6 +1,6 @@
 main:
     random_seed: 'nips2020'
-    saved_dir: '/home/tony/PointScene/models/ft3d/flownet3d/train'
+    saved_dir: '/home/tony/PointScene/models/ft3d/flownet3d_new_metric/train'
 
 dataset:
     name: 'FT3DDataset'
@@ -31,9 +31,12 @@ losses:
 
 metrics:
     - name: 'EPE'
-    - name: 'F1Score'
-      kwargs:
-        threshold: 0.05
+    - name: 'ACC_005'
+    - name: 'ACC_01'
+    - name : 'ADE'
+    # - name: 'F1Score'
+    #   kwargs:
+    #     threshold: 0.05
 
 optimizer:
     name: 'Adam'
@@ -42,11 +45,11 @@ optimizer:
         weight_decay: 0
         amsgrad: false
 
-# lr_scheduler:
-    # name: 'StepLR'
-    # kwargs:
-        # step_size: 100
-        # gamma: 0.1
+lr_scheduler:
+    name: 'StepLR'
+    kwargs:
+        step_size: 200
+        gamma: 0.1
 
 logger:
     name: 'EmptyLogger'
@@ -65,4 +68,4 @@ trainer:
     name: 'FT3DTrainer'
     kwargs:
         device: 'cuda:0'
-        num_epochs: 300
+        num_epochs: 600

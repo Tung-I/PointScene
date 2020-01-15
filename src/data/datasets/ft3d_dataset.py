@@ -2,7 +2,6 @@ import csv
 import glob
 import torch
 import numpy as np
-import nibabel as nib
 
 from src.data.datasets.base_dataset import BaseDataset
 from src.data.transforms import compose
@@ -49,7 +48,7 @@ class FT3DDataset(BaseDataset):
         rgb1 = file['color1'].astype('float32')
         rgb2 = file['color2'].astype('float32')
         flow = file['flow'].astype('float32')
-        mask = file['valid_mask1']
+        mask = file['mask']
 
         if self.type == 'train':
             n1 = point1.shape[0]
@@ -63,13 +62,13 @@ class FT3DDataset(BaseDataset):
             rgb2 = rgb2[sample_idx2, :]
             flow = flow[sample_idx1, :]
             mask = mask[sample_idx1]
-        else:
-            point1 = point1[:self.npoints, :]
-            point2 = point2[:self.npoints, :]
-            rgb1 = rgb1[sample_idx1, :]
-            rgb2 = rgb2[sample_idx2, :]
-            flow = flow[:self.npoints, :]
-            mask = mask[:self.npoints]
+        # else:
+        #     point1 = point1[:self.npoints, :]
+        #     point2 = point2[:self.npoints, :]
+        #     rgb1 = rgb1[:self.npoints, :]
+        #     rgb2 = rgb2[:self.npoints, :]
+        #     flow = flow[:self.npoints, :]
+        #     mask = mask[:self.npoints]
 
         point1_center = np.mean(point1, 0)
         point1 -= point1_center
