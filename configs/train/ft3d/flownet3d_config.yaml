@@ -1,6 +1,7 @@
 main:
     random_seed: 'nips2020'
-    saved_dir: '/home/tony/PointScene/models/ft3d/flownet3d_new_metric/train'
+    saved_dir: '/home/tony/PointScene/models/ft3d/tmp/train'
+    # loaded_path: '/home/tony/PointScene/models/ft3d/flownet3d_new_matrics/train/checkpoints/180.pth'
 
 dataset:
     name: 'FT3DDataset'

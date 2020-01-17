@@ -207,26 +207,26 @@ class PointNetSetAbstraction(nn.Module):
         """
         device = xyz.device
         B, C, N = xyz.shape
-        xyz_t = xyz.permute(0, 2, 1).contiguous()
+        xyz_t = xyz.permute(0, 2, 1).contiguous()   # [B, N, C]
         # if points is not None:
         #     points = points.permute(0, 2, 1).contiguous()
 
-        # 选取邻域点
         if self.group_all == False:
 
             fps_idx = pointutils.furthest_point_sample(xyz_t, self.npoint)  # [B, N]
             new_xyz = pointutils.gather_operation(xyz, fps_idx)  # [B, C, N]
+
         else:
             new_xyz = xyz
-        new_points = self.queryandgroup(xyz_t, new_xyz.transpose(2, 1).contiguous(), points) # [B, 3+C, N, S]
+        new_points = self.queryandgroup(xyz_t, new_xyz.transpose(2, 1).contiguous(), points) # [B, D+C, N, S]
         
-        # new_xyz: sampled points position data, [B, C, npoint]
-        # new_points: sampled points data, [B, C+D, npoint, nsample]
+
         for i, conv in enumerate(self.mlp_convs):
             bn = self.mlp_bns[i]
-            new_points =  F.relu(bn(conv(new_points)))
-
-        new_points = torch.max(new_points, -1)[0]
+            new_points =  F.relu(bn(conv(new_points)))   # [B, num_feature, N, S]
+        
+        new_points = torch.max(new_points, -1)[0]   # [B, num_feature, N]
+        
         return new_xyz, new_points
 
 class FlowEmbedding(nn.Module):

@@ -23,3 +23,5 @@ class MyL2Loss(nn.Module):
             loss = torch.norm(flow - flow_pred, p=2, dim=1).mean()
 
         return loss
+
+
