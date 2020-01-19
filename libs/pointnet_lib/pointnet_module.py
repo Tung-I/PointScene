@@ -19,6 +19,7 @@ def pc_normalize(pc):
     pc = pc / m
     return pc
 
+
 def square_distance(src, dst):
     """
     Calculate Euclid distance between each two points.
@@ -82,6 +83,7 @@ def farthest_point_sample(xyz, npoint):
         distance[mask] = dist[mask]
         farthest = torch.max(distance, -1)[1]
     return centroids
+
 
 def knn_point(k, pos1, pos2):
     '''
@@ -176,6 +178,7 @@ def sample_and_group_all(xyz, points):
         new_points = grouped_xyz
     return new_xyz, new_points
 
+
 class PointNetSetAbstraction(nn.Module):
     def __init__(self, npoint, radius, nsample, in_channel, mlp, group_all):
         super(PointNetSetAbstraction, self).__init__()
@@ -213,8 +216,8 @@ class PointNetSetAbstraction(nn.Module):
 
         if self.group_all == False:
 
-            fps_idx = pointutils.furthest_point_sample(xyz_t, self.npoint)  # [B, N]
-            new_xyz = pointutils.gather_operation(xyz, fps_idx)  # [B, C, N]
+            fps_idx = pointutils.furthest_point_sample(xyz_t, self.npoint)  # [B, npoint]
+            new_xyz = pointutils.gather_operation(xyz, fps_idx)  # [B, C, npoint]
 
         else:
             new_xyz = xyz
@@ -223,11 +226,12 @@ class PointNetSetAbstraction(nn.Module):
 
         for i, conv in enumerate(self.mlp_convs):
             bn = self.mlp_bns[i]
-            new_points =  F.relu(bn(conv(new_points)))   # [B, num_feature, N, S]
+            new_points =  F.relu(bn(conv(new_points)))   # [B, channel, N, S]
         
-        new_points = torch.max(new_points, -1)[0]   # [B, num_feature, N]
+        new_points = torch.max(new_points, -1)[0]   # [B, channel, N]
         
         return new_xyz, new_points
+
 
 class FlowEmbedding(nn.Module):
     def __init__(self, radius, nsample, in_channel, mlp, pooling='max', corr_func='concat', knn = True):
@@ -261,24 +265,24 @@ class FlowEmbedding(nn.Module):
         pos2_t = pos2.permute(0, 2, 1).contiguous()
         B, N, C = pos1_t.shape
         if self.knn:
-            _, idx = pointutils.knn(self.nsample, pos1_t, pos2_t)
+            _, idx = pointutils.knn(self.nsample, pos1_t, pos2_t)   # [B, N, S]
         else:
             # If the ball neighborhood points are less than nsample,
             # than use the knn neighborhood points
             idx, cnt = query_ball_point(self.radius, self.nsample, pos2_t, pos1_t)
-            # 利用knn取最近的那些点
+            
             _, idx_knn = pointutils.knn(self.nsample, pos1_t, pos2_t)
             cnt = cnt.view(B, -1, 1).repeat(1, 1, self.nsample)
             idx = idx_knn[cnt > (self.nsample-1)]
         
         pos2_grouped = pointutils.grouping_operation(pos2, idx) # [B, 3, N, S]
-        pos_diff = pos2_grouped - pos1.view(B, -1, N, 1)    # [B, 3, N, S]
+        pos_diff = pos2_grouped - pos1.view(B, -1, N, 1)  # [B, 3, N, S]
         
-        feat2_grouped = pointutils.grouping_operation(feature2, idx)    # [B, C, N, S]
+        feat2_grouped = pointutils.grouping_operation(feature2, idx)  # [B, C, N, S]
         if self.corr_func=='concat':
-            feat_diff = torch.cat([feat2_grouped, feature1.view(B, -1, N, 1).repeat(1, 1, 1, self.nsample)], dim = 1)
+            feat_diff = torch.cat([feat2_grouped, feature1.view(B, -1, N, 1).repeat(1, 1, 1, self.nsample)], dim = 1)  # [B, 2*C, N, S]
         
-        feat1_new = torch.cat([pos_diff, feat_diff], dim = 1)  # [B, 2*C+3,N,S]
+        feat1_new = torch.cat([pos_diff, feat_diff], dim = 1)  # [B, 2*C+3, N, S]
         for i, conv in enumerate(self.mlp_convs):
             bn = self.mlp_bns[i]
             feat1_new = F.relu(bn(conv(feat1_new)))
@@ -286,24 +290,28 @@ class FlowEmbedding(nn.Module):
         feat1_new = torch.max(feat1_new, -1)[0]  # [B, mlp[-1], npoint]
         return pos1, feat1_new
 
+
 class PointNetSetUpConv(nn.Module):
-    def __init__(self, nsample, radius, f1_channel, f2_channel, mlp, mlp2, knn = True):
+    def __init__(self, nsample, radius, f1_channel, f2_channel, mlp, mlp2, knn=True):
         super(PointNetSetUpConv, self).__init__()
         self.nsample = nsample
         self.radius = radius
         self.knn = knn
         self.mlp1_convs = nn.ModuleList()
         self.mlp2_convs = nn.ModuleList()
+
         last_channel = f2_channel+3
         for out_channel in mlp:
             self.mlp1_convs.append(nn.Sequential(nn.Conv2d(last_channel, out_channel, 1, bias=False),
                                                  nn.BatchNorm2d(out_channel),
                                                  nn.ReLU(inplace=False)))
             last_channel = out_channel
+
         if len(mlp) is not 0:
             last_channel = mlp[-1] + f1_channel
         else:
             last_channel = last_channel + f1_channel
+
         for out_channel in mlp2:
             self.mlp2_convs.append(nn.Sequential(nn.Conv1d(last_channel, out_channel, 1, bias=False),
                                                  nn.BatchNorm1d(out_channel),
@@ -326,27 +334,31 @@ class PointNetSetUpConv(nn.Module):
         pos2_t = pos2.permute(0, 2, 1).contiguous()
         B,C,N = pos1.shape
         if self.knn:
-            _, idx = pointutils.knn(self.nsample, pos1_t, pos2_t)
+            _, idx = pointutils.knn(self.nsample, pos1_t, pos2_t)   # [B, N1, S]
         else:
             idx, _ = query_ball_point(self.radius, self.nsample, pos2_t, pos1_t)
         
         pos2_grouped = pointutils.grouping_operation(pos2, idx)
-        pos_diff = pos2_grouped - pos1.view(B, -1, N, 1)    # [B,3,N1,S]
+        pos_diff = pos2_grouped - pos1.view(B, -1, N, 1)    # [B, 3, N1, S]
 
         feat2_grouped = pointutils.grouping_operation(feature2, idx)
-        feat_new = torch.cat([feat2_grouped, pos_diff], dim = 1)   # [B,C1+3,N1,S]
+        feat_new = torch.cat([feat2_grouped, pos_diff], dim = 1)   # [B, C1+3, N1, S]
+        
         for conv in self.mlp1_convs:
             feat_new = conv(feat_new)
+
         # max pooling
-        feat_new = feat_new.max(-1)[0]   # [B,mlp1[-1],N1]
+        feat_new = feat_new.max(-1)[0]   # [B, mlp1[-1], N1]
+
         # concatenate feature in early layer
         if feature1 is not None:
-            feat_new = torch.cat([feat_new, feature1], dim=1)
-        # feat_new = feat_new.view(B,-1,N,1)
+            feat_new = torch.cat([feat_new, feature1], dim=1)   # [B, mlp1[-1]+feat1_channel, N1]
+
         for conv in self.mlp2_convs:
             feat_new = conv(feat_new)
         
         return feat_new
+
 
 class PointNetFeaturePropogation(nn.Module):
     def __init__(self, in_channel, mlp):
@@ -376,12 +388,12 @@ class PointNetFeaturePropogation(nn.Module):
         # dists = square_distance(pos1, pos2)
         # dists, idx = dists.sort(dim=-1)
         # dists, idx = dists[:, :, :3], idx[:, :, :3]  # [B, N, 3]
-        dists,idx = pointutils.three_nn(pos1_t,pos2_t)
+        dists, idx = pointutils.three_nn(pos1_t, pos2_t)   # [B, N, K=3]
         dists[dists < 1e-10] = 1e-10
         weight = 1.0 / dists
-        weight = weight / torch.sum(weight, -1,keepdim = True)   # [B,N,3]
-        interpolated_feat = torch.sum(pointutils.grouping_operation(feature2, idx) * weight.view(B, 1, N, 3), dim = -1) # [B,C,N,3]
-
+        weight = weight / torch.sum(weight, -1, keepdim=True)
+        interpolated_feat = torch.sum(pointutils.grouping_operation(feature2, idx) * weight.view(B, 1, N, 3), dim = -1) # [B, C, N, S=3] -> [B, C, N]
+        
         if feature1 is not None:
             feat_new = torch.cat([interpolated_feat, feature1], 1)
         else:

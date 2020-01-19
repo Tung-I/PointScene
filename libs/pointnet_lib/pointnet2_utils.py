@@ -275,13 +275,13 @@ class QueryAndGroup(nn.Module):
         :return:
             new_features: (B, 3 + C, npoint, nsample)
         """
-        idx = ball_query(self.radius, self.nsample, xyz, new_xyz)
-        xyz_trans = xyz.transpose(1, 2).contiguous()
-        grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
-        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
+        idx = ball_query(self.radius, self.nsample, xyz, new_xyz)   # (B, npoint, nsample)
+        xyz_trans = xyz.transpose(1, 2).contiguous()   # (B, 3, N)
+        grouped_xyz = grouping_operation(xyz_trans, idx)    # (B, 3, npoint, nsample)
+        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)    # normalize
 
         if features is not None:
-            grouped_features = grouping_operation(features, idx)
+            grouped_features = grouping_operation(features, idx)    # (B, C, npoint, nsample)
             if self.use_xyz:
                 new_features = torch.cat([grouped_xyz, grouped_features], dim=1)  # (B, C + 3, npoint, nsample)
             else:
