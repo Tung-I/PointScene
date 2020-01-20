@@ -35,11 +35,11 @@ class FT3DSelfTrainer(BaseTrainer):
         count = 0
         for batch in trange:
             batch = self._allocate_data(batch)
-            pc1, pc2, rgb1, rgb2, flow, mask = self._get_inputs_targets(batch)
+            pc1, pc2, flow, mask = self._get_inputs_targets(batch)
             target = {'pc1': pc1, 'pc2': pc2, 'flow': flow}
 
             if mode == 'training':
-                outputs = self.net(pc1, pc2, rgb1, rgb2)
+                outputs = self.net(pc1, pc2, pc1, pc2)
 
                 losses = self._compute_losses(outputs, target, mask)
 
@@ -49,7 +49,7 @@ class FT3DSelfTrainer(BaseTrainer):
                 self.optimizer.step()
             else:
                 with torch.no_grad():
-                    outputs = self.net(pc1, pc2, rgb1, rgb2)
+                    outputs = self.net(pc1, pc2, pc1, pc2)
                     losses = self._compute_losses(outputs, target, mask)
                     loss = (torch.stack(losses) * self.loss_weights).sum()
             metrics =  self._compute_metrics(outputs, target, mask)
@@ -71,7 +71,7 @@ class FT3DSelfTrainer(BaseTrainer):
             input (torch.Tensor): The data input.
             target (torch.LongTensor): The data target.
         """
-        return batch['point1'], batch['point2'], batch['rgb1'], batch['rgb2'], batch['flow'], batch['mask']
+        return batch['point1'], batch['point2'], batch['flow'], batch['mask']
 
     def _compute_losses(self, output, target, mask):
         """Compute the losses.

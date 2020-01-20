@@ -4,10 +4,10 @@ main:
     # loaded_path: '/home/tony/PointScene/models/ft3d/flownet3d_new_matrics/train/checkpoints/180.pth'
 
 dataset:
-    name: 'FT3DDataset'
+    name: 'FT3DSelfDataset'
     kwargs:
-        data_dir: '/home/tony/datasets/FT3D_point_cloud_data'
-        data_split_csv: '/home/tony/PointScene/ft3d_split_10.csv'
+        data_dir: '/home/tony/datasets/ft3d_pc_data'
+        data_split_csv: '/home/tony/PointScene/ft3d_split_new.csv'
         re_sample_size: 2048
         train_preprocessings:
         valid_preprocessings:
@@ -27,15 +27,15 @@ net:
     name: 'FlowNet3DSelf'
 
 losses:
-    # - name: 'MyL2Loss'
+    - name: 'MyL2Loss'
+      weight: 1.0
+    # - name: 'ChamferLoss'
+    #   weight: 0.0001
+    # - name: 'SmoothnessLoss'
+    #   kwargs:
+    #     radius: 0.1
+    #     nsample: 4
     #   weight: 1.0
-    - name: 'ChamferLoss'
-      weight: 0.01
-    - name: 'SmoothnessLoss'
-      kwargs:
-        radius: 1.0
-        nsample: 16
-      weight: 0.005
 
 metrics:
     - name: 'EPE'
