@@ -74,7 +74,7 @@ def get_3d_pos_xy(y_prime, x_prime, depth, focal_length=1050., w=960, h=540):
 
 
 def gen_datapoint(fname_disparity, fname_disparity_next_frame, fname_disparity_change, fname_optical_flow, \
-                  image, image_next_frame, n = 10240, max_cut = 35, focal_length=1050.):
+                  image, image_next_frame, n = 8192, max_cut = 35, focal_length=1050.):
 
     np.random.seed(601985)
 
@@ -158,12 +158,14 @@ def gen_datapoint(fname_disparity, fname_disparity_next_frame, fname_disparity_c
     mask1 = valid_mask_occ1 & valid_mask_fov1
 
     current_pos1[np.where(np.isnan(current_pos1)!=0)] = 0
-    future_pos1[np.where(np.isnan(future_pos1)!=0)] = 0
+    current_pos2[np.where(np.isnan(current_pos2)!=0)] = 0
+    current_rgb1[np.where(np.isnan(current_rgb1)!=0)] = 0
+    current_rgb2[np.where(np.isnan(current_rgb2)!=0)] = 0
     flow[np.where(np.isnan(flow)!=0)] = 0
     mask1[np.where(np.isnan(mask1)!=0)] = 0
 
 
-    return current_pos1, future_pos1, flow, mask1
+    return current_pos1, current_pos2, current_rgb1, current_rgb2, flow, mask1
 
 
 def proc_one_scene(s, input_dir_1, input_dir_2, output_dir):
@@ -174,7 +176,7 @@ def proc_one_scene(s, input_dir_1, input_dir_2, output_dir):
     ABC = dis_split[-3]
     scene_idx = dis_split[-2]
     left_right = dis_split[-1]
-    for v in range(6, 15):
+    for v in range(6, 14):
         fname = os.path.join(output_dir, train_or_test + '_' + ABC + '_' + scene_idx + '_' + left_right + '_' + str(v).zfill(4) + '-{}'.format(0) + '.npz')
 
         fname_disparity = os.path.join(input_dir_1, 'disparity', train_or_test, ABC, scene_idx, left_right, str(v).zfill(4) + '.pfm')
@@ -185,13 +187,27 @@ def proc_one_scene(s, input_dir_1, input_dir_2, output_dir):
         L_R = 'L' if left_right == 'left' else 'R'
         fname_optical_flow = os.path.join(input_dir_2, 'optical_flow', train_or_test, ABC, scene_idx, 'into_future', left_right, 'OpticalFlowIntoFuture_' + str(v).zfill(4) + '_' + L_R + '.pfm')
 
-        d = gen_datapoint(fname_disparity, fname_disparity_next_frame, fname_disparity_change, fname_optical_flow, fname_image, fname_image_next_frame, focal_length=1050.)
-        if d is not None:
+        d1 = gen_datapoint(fname_disparity, fname_disparity_next_frame, fname_disparity_change, fname_optical_flow, fname_image, fname_image_next_frame, focal_length=1050.)
+
+        
+        fname_disparity = os.path.join(input_dir_1, 'disparity', train_or_test, ABC, scene_idx, left_right, str(v+1).zfill(4) + '.pfm')
+        fname_disparity_next_frame = os.path.join(input_dir_1, 'disparity', train_or_test, ABC, scene_idx, left_right, str(v+1+1).zfill(4) + '.pfm')
+        fname_image = os.path.join(input_dir_1, 'frames_finalpass', train_or_test, ABC, scene_idx, left_right, str(v+1).zfill(4) + '.png')
+        fname_image_next_frame = os.path.join(input_dir_1, 'frames_finalpass', train_or_test, ABC, scene_idx, left_right, str(v+1+1).zfill(4) + '.png')
+        fname_disparity_change = os.path.join(input_dir_2, 'disparity_change', train_or_test, ABC, scene_idx, 'into_future', left_right, str(v+1).zfill(4) + '.pfm')
+        L_R = 'L' if left_right == 'left' else 'R'
+        fname_optical_flow = os.path.join(input_dir_2, 'optical_flow', train_or_test, ABC, scene_idx, 'into_future', left_right, 'OpticalFlowIntoFuture_' + str(v+1).zfill(4) + '_' + L_R + '.pfm')
+
+        d2 = gen_datapoint(fname_disparity, fname_disparity_next_frame, fname_disparity_change, fname_optical_flow, fname_image, fname_image_next_frame, focal_length=1050.)
+
+        if d1 is not None and d2 is not None:
             print(fname)
             np.savez_compressed(fname, points1=d[0], \
                                        points2=d[1], \
-                                       flow=d[2], \
-                                       mask=d[3])
+                                       color1=d[2], \
+                                       color2=d[3], \
+                                       flow=d[4], \
+                                       mask=d[5])
         else:
             print('N')
 
@@ -200,7 +216,7 @@ pool = multiprocessing.Pool(processes=8)
 
 INPUT_DIR_1 = '/datasets'
 INPUT_DIR_2 = '/data'
-OUTPUT_DIR = '/home/tony/datasets/ft3d_pc_data'
+OUTPUT_DIR = '/home/tony/datasets/FT3D_point_cloud_data'
 
 if not os.path.exists(OUTPUT_DIR):
     os.system('mkdir -p {}'.format(OUTPUT_DIR))

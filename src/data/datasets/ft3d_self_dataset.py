@@ -52,10 +52,8 @@ class FT3DSelfDataset(BaseDataset):
         if self.type == 'train':
             n1 = point1.shape[0]
             sample_idx1 = np.random.choice(n1, self.npoints, replace=False)
-            random.shuffle(sample_idx1)
             n2 = point2.shape[0]
             sample_idx2 = np.random.choice(n2, self.npoints, replace=False)
-            random.shuffle(sample_idx2)
 
             point1 = point1[sample_idx1, :]
             point2 = point2[sample_idx2, :]

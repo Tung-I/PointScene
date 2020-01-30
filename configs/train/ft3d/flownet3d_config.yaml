@@ -1,14 +1,14 @@
 main:
     random_seed: 'nips2020'
-    saved_dir: '/home/tony/PointScene/models/ft3d/new_data/train'
+    saved_dir: '/home/tony/PointScene/models/ft3d/tmp/train'
     # loaded_path: '/home/tony/PointScene/models/ft3d/flownet3d_new_matrics/train/checkpoints/180.pth'
 
 dataset:
     name: 'FT3DDataset'
     kwargs:
-        data_dir: '/home/tony/datasets/ft3d_pc_data'
-        data_split_csv: '/home/tony/PointScene/ft3d_split_new.csv'
-        re_sample_size: 2048
+        data_dir: '/home/tony/datasets/FT3D_point_cloud_data'
+        data_split_csv: '/home/tony/PointScene/ft3d_split_10.csv'
+        re_sample_size: 8192
         train_preprocessings:
         valid_preprocessings:
         augments:

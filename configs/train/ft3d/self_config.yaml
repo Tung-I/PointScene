@@ -8,7 +8,7 @@ dataset:
     kwargs:
         data_dir: '/home/tony/datasets/ft3d_pc_data'
         data_split_csv: '/home/tony/PointScene/ft3d_split_new.csv'
-        re_sample_size: 2048
+        re_sample_size: 4096
         train_preprocessings:
         valid_preprocessings:
         augments:
@@ -27,15 +27,15 @@ net:
     name: 'FlowNet3DSelf'
 
 losses:
-    - name: 'MyL2Loss'
-      weight: 1.0
-    # - name: 'ChamferLoss'
-    #   weight: 0.0001
-    # - name: 'SmoothnessLoss'
-    #   kwargs:
-    #     radius: 0.1
-    #     nsample: 4
+    # - name: 'MyL2Loss'
     #   weight: 1.0
+    - name: 'ChamferLoss'
+      weight: 0.0001
+    - name: 'SmoothnessLoss'
+      kwargs:
+        radius: 2.0
+        nsample: 4
+      weight: 0.01
 
 metrics:
     - name: 'EPE'
@@ -47,7 +47,7 @@ metrics:
 optimizer:
     name: 'Adam'
     kwargs:
-        lr: 0.001
+        lr: 0.0001
         weight_decay: 0
         amsgrad: false
 

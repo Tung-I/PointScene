@@ -205,8 +205,8 @@ class PointNetSetAbstraction(nn.Module):
             xyz: input points position data, [B, C, N]
             points: input points data, [B, D, N]
         Return:
-            new_xyz: sampled points position data, [B, S, C]
-            new_points_concat: sample points feature data, [B, S, D']
+            new_xyz: sampled points position data, [B, C, S]
+            new_points_concat: sample points feature data, [B, D', S]
         """
         device = xyz.device
         B, C, N = xyz.shape
@@ -221,15 +221,15 @@ class PointNetSetAbstraction(nn.Module):
 
         else:
             new_xyz = xyz
-        new_points = self.queryandgroup(xyz_t, new_xyz.transpose(2, 1).contiguous(), points) # [B, D+C, N, S]
+        new_points = self.queryandgroup(xyz_t, new_xyz.transpose(2, 1).contiguous(), points) # [B, D+C, npoint, nsample]
         
 
         for i, conv in enumerate(self.mlp_convs):
             bn = self.mlp_bns[i]
-            new_points =  F.relu(bn(conv(new_points)))   # [B, channel, N, S]
+            new_points =  F.relu(bn(conv(new_points)))   # [B, channel, npoint, nsample]
         
-        new_points = torch.max(new_points, -1)[0]   # [B, channel, N]
-        
+        new_points = torch.max(new_points, -1)[0]   # [B, channel, nsample]
+
         return new_xyz, new_points
 
 

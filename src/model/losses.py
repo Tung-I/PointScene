@@ -57,7 +57,7 @@ class ChamferLoss(nn.Module):
         # loss = diff1.mean() + diff2.mean()
 
         pos_diff_forward, idx = pointutils.knn(1, pos1_t, pos2_t)  # [B, N, 1]
-        pos_diff_backward, idx = pointutils.knn(1, pos1_t, pos2_t)  # [B, N, 1]
+        pos_diff_backward, idx = pointutils.knn(1, pos2_t, pos1_t)  # [B, N, 1]
 
         loss = torch.sum(pos_diff_forward, 1).mean() + torch.sum(pos_diff_backward, 1).mean()
 
