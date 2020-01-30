@@ -2,7 +2,7 @@ import csv
 import torch
 import logging
 import numpy as np
-import nibabel as nib
+# import nibabel as nib
 from tqdm import tqdm
 
 from src.data.transforms import compose
